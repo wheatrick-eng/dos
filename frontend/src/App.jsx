@@ -3,6 +3,15 @@ import React, { useEffect, useState } from 'react';
 const API_BASE =
   import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
+function formatDollar(n) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(n);
+}
+
 export default function App() {
   const [holdings, setHoldings] = useState([]);
   const [portfolio, setPortfolio] = useState(null);
@@ -136,7 +145,7 @@ export default function App() {
             />
           </label>
           <label style={{ display: 'flex', flexDirection: 'column' }}>
-            <span>Cost basis (per share)</span>
+            <span>Cost basis ($ per share)</span>
             <input
               name="cost_basis"
               type="number"
@@ -216,7 +225,7 @@ export default function App() {
                 <tr key={h.id}>
                   <td>{h.ticker}</td>
                   <td style={{ textAlign: 'right' }}>{h.quantity}</td>
-                  <td style={{ textAlign: 'right' }}>{h.cost_basis}</td>
+                  <td style={{ textAlign: 'right' }}>{formatDollar(h.cost_basis)}</td>
                   <td style={{ textAlign: 'right' }}>
                     <button
                       type="button"
@@ -319,10 +328,10 @@ export default function App() {
                     <td>{p.ticker}</td>
                     <td style={{ textAlign: 'right' }}>{p.quantity}</td>
                     <td style={{ textAlign: 'right' }}>
-                      {p.price.toFixed(2)}
+                      {formatDollar(p.price)}
                     </td>
                     <td style={{ textAlign: 'right' }}>
-                      {p.value.toFixed(2)}
+                      {formatDollar(p.value)}
                     </td>
                     <td
                       style={{
@@ -335,7 +344,7 @@ export default function App() {
                             : 'inherit',
                       }}
                     >
-                      {p.unrealized_pl.toFixed(2)}
+                      {formatDollar(p.unrealized_pl)}
                     </td>
                   </tr>
                 ))}
@@ -359,7 +368,7 @@ function Metric({ label, value, highlight = false }) {
     <div>
       <div style={{ fontSize: 12, color: '#6b7280' }}>{label}</div>
       <div style={{ fontSize: 20, fontWeight: 600, color }}>
-        {value.toFixed(2)}
+        {formatDollar(value)}
       </div>
     </div>
   );
