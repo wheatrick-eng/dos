@@ -13,11 +13,12 @@ services:
       - key: ALPHAVANTAGE_API_KEY
         sync: false
 
-  - type: static_site
+  - type: web
     name: portfolio-frontend
+    runtime: static
     rootDir: frontend
     buildCommand: npm install && npm run build
-    publishDir: dist
+    staticPublishPath: frontend/dist
     envVars:
       - key: VITE_API_BASE_URL
         fromService:
