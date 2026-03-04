@@ -47,6 +47,16 @@ def get_db():
         db.close()
 
 
+def _av_error_message(data: dict) -> str | None:
+    if "Note" in data and "rate" in data.get("Note", "").lower():
+        return "Rate limit (5/min or 25/day). Try again later."
+    if "Error Message" in data:
+        return data["Error Message"][:120]
+    if "Information" in data:
+        return data["Information"][:120]
+    return None
+
+
 async def fetch_price(ticker: str) -> float:
     """
     Fetch latest price for a ticker using Alpha Vantage.
@@ -61,14 +71,19 @@ async def fetch_price(ticker: str) -> float:
         "symbol": ticker,
         "apikey": ALPHAVANTAGE_API_KEY,
     }
-    async with httpx.AsyncClient(timeout=10) as client:
+    async with httpx.AsyncClient(timeout=15) as client:
         resp = await client.get(url, params=params)
         resp.raise_for_status()
         data = resp.json()
+
+    msg = _av_error_message(data)
+    if msg:
+        raise HTTPException(status_code=502, detail=msg)
+
     try:
         price_str = data["Global Quote"]["05. price"]
         return float(price_str)
-    except Exception:
+    except (KeyError, TypeError, ValueError):
         raise HTTPException(status_code=502, detail=f"Could not fetch price for {ticker}")
 
 
@@ -128,13 +143,18 @@ async def portfolio(db: Session = Depends(get_db)):
     total_cost = 0.0
     positions = []
 
+    last_error = None
     for i, h in enumerate(holdings):
         if i > 0:
             await asyncio.sleep(12)
         try:
             price = await fetch_price(h.ticker)
-        except (HTTPException, Exception):
+        except HTTPException as e:
             price = None
+            last_error = e.detail
+        except Exception:
+            price = None
+            last_error = "Could not fetch price"
         cost = h.cost_basis * h.quantity
         total_cost += cost
         if price is not None:
@@ -162,7 +182,7 @@ async def portfolio(db: Session = Depends(get_db)):
                     "price": None,
                     "value": None,
                     "unrealized_pl": None,
-                    "error": "Could not fetch price",
+                    "error": last_error or "Could not fetch price",
                 }
             )
 

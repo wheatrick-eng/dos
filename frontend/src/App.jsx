@@ -279,6 +279,9 @@ export default function App() {
             {loading ? 'Loading…' : 'Fetch prices'}
           </button>
         </div>
+        <p style={{ fontSize: 12, color: '#6b7280', marginTop: '0.25rem' }}>
+          Free price API: 5 calls/min, 25/day. If both fail, wait and try again later.
+        </p>
         {error && (
           <p style={{ color: '#b91c1c', marginTop: '0.5rem' }}>{error}</p>
         )}
