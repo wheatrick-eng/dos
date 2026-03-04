@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine, Column, Integer, String, Float
 from sqlalchemy.orm import sessionmaker, declarative_base, Session
 from dotenv import load_dotenv
+import asyncio
 import os
 import httpx
 from typing import List
@@ -127,23 +128,43 @@ async def portfolio(db: Session = Depends(get_db)):
     total_cost = 0.0
     positions = []
 
-    for h in holdings:
-        price = await fetch_price(h.ticker)
-        value = price * h.quantity
+    for i, h in enumerate(holdings):
+        if i > 0:
+            await asyncio.sleep(12)
+        try:
+            price = await fetch_price(h.ticker)
+        except (HTTPException, Exception):
+            price = None
         cost = h.cost_basis * h.quantity
-        total_value += value
         total_cost += cost
-        positions.append(
-            {
-                "id": h.id,
-                "ticker": h.ticker,
-                "quantity": h.quantity,
-                "cost_basis": h.cost_basis,
-                "price": price,
-                "value": value,
-                "unrealized_pl": value - cost,
-            }
-        )
+        if price is not None:
+            value = price * h.quantity
+            total_value += value
+            positions.append(
+                {
+                    "id": h.id,
+                    "ticker": h.ticker,
+                    "quantity": h.quantity,
+                    "cost_basis": h.cost_basis,
+                    "price": price,
+                    "value": value,
+                    "unrealized_pl": value - cost,
+                    "error": None,
+                }
+            )
+        else:
+            positions.append(
+                {
+                    "id": h.id,
+                    "ticker": h.ticker,
+                    "quantity": h.quantity,
+                    "cost_basis": h.cost_basis,
+                    "price": None,
+                    "value": None,
+                    "unrealized_pl": None,
+                    "error": "Could not fetch price",
+                }
+            )
 
     return {
         "total_value": total_value,

@@ -328,23 +328,29 @@ export default function App() {
                     <td>{p.ticker}</td>
                     <td style={{ textAlign: 'right' }}>{p.quantity}</td>
                     <td style={{ textAlign: 'right' }}>
-                      {formatDollar(p.price)}
+                      {p.error ? (
+                        <span style={{ color: '#b91c1c' }}>{p.error}</span>
+                      ) : (
+                        formatDollar(p.price)
+                      )}
                     </td>
                     <td style={{ textAlign: 'right' }}>
-                      {formatDollar(p.value)}
+                      {p.error ? '—' : formatDollar(p.value)}
                     </td>
                     <td
                       style={{
                         textAlign: 'right',
                         color:
-                          p.unrealized_pl > 0
+                          p.error
+                            ? 'inherit'
+                            : p.unrealized_pl > 0
                             ? '#16a34a'
                             : p.unrealized_pl < 0
                             ? '#dc2626'
                             : 'inherit',
                       }}
                     >
-                      {formatDollar(p.unrealized_pl)}
+                      {p.error ? '—' : formatDollar(p.unrealized_pl)}
                     </td>
                   </tr>
                 ))}
